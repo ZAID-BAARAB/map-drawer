@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">mapDrawApp</string>
+    <string name="mapbox_access_token">pk.YOUR_MAPBOX_TOKEN_HERE</string>
+</resources>
