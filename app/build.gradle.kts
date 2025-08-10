@@ -74,11 +74,23 @@ dependencies {
     implementation("androidx.room:room-ktx:2.6.1")
     kapt("androidx.room:room-compiler:2.6.1")
 
-    // Mapbox Maps SDK (use latest stable)
-    implementation ("com.mapbox.maps:android:11.5.0")
+
+    // **Google Maps SDK**
+    implementation("com.google.android.gms:play-services-maps:18.2.0")
+    implementation("com.google.maps.android:maps-compose:4.3.3")
+    implementation("com.google.maps.android:maps-ktx:5.1.1")        // optional, KTX helpers
+    implementation("com.google.maps.android:maps-utils-ktx:5.1.1")
+
+    testImplementation("junit:junit:4.13.2")
+    androidTestImplementation("androidx.test.ext:junit:1.1.5")
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
 
     // RecyclerView (needed for non-Compose drawer list)
     implementation("androidx.recyclerview:recyclerview:1.3.2")
+
+// Compose + Lifecycle
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.4")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.4")
 
     // Lifecycle & ViewModel
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.4")
@@ -89,4 +101,13 @@ dependencies {
 
     // Material Design (M3)
     implementation("com.google.android.material:material:1.12.0")
+
+    // Compose
+    implementation(platform("androidx.compose:compose-bom:2024.06.00"))
+    implementation("androidx.compose.ui:ui")
+    implementation("androidx.compose.material3:material3")
+    implementation("androidx.compose.ui:ui-tooling-preview")
+    debugImplementation("androidx.compose.ui:ui-tooling")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.4")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.4")
 }
