@@ -3,6 +3,8 @@ package com.sowit.mapdrawapp
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.android.gms.maps.model.LatLng
+import com.google.maps.android.SphericalUtil
 import com.sowit.mapdrawapp.data.AppDatabase
 import com.sowit.mapdrawapp.data.GeoConverters
 import com.sowit.mapdrawapp.data.PlotArea
@@ -33,13 +35,20 @@ class MapViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             val pts = _current.value
             if (pts.size < 3) return@launch
-            val (cLat, cLng) = GeoConverters.centroidOf(pts)
+
+            val (cLat, cLng) = com.sowit.mapdrawapp.data.GeoConverters.centroidOf(pts)
+
+            // area in m² using Maps Utils
+            val latLngs = pts.map { LatLng(it.first, it.second) }
+            val areaSqM = SphericalUtil.computeArea(latLngs)
+
             val id = dao.insert(
                 PlotArea(
                     name = name.ifBlank { "Unnamed" },
                     vertices = GeoConverters.toStorage(pts),
                     centroidLat = cLat,
-                    centroidLng = cLng
+                    centroidLng = cLng,
+                    areaSqM = areaSqM
                 )
             )
             onDone(id)

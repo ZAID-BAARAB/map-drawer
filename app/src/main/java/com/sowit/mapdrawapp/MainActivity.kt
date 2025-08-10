@@ -21,7 +21,7 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
-
+import com.sowit.mapdrawapp.data.GeoConverters
 import com.sowit.mapdrawapp.data.PlotArea
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -66,7 +66,8 @@ fun AppScaffold(vm: MapViewModel = viewModel()) {
                             ListItem(
                                 headlineContent = { Text(plot.name) },
                                 supportingContent = {
-                                    Text("#${plot.id} • ${plot.centroidLat.format(4)}, ${plot.centroidLng.format(4)}")
+                                    val ha = plot.areaSqM / 10_000.0
+                                    Text("#${plot.id} • ${plot.centroidLat.format(4)}, ${plot.centroidLng.format(4)} • ${ha.format(2)} ha")
                                 },
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -82,7 +83,7 @@ fun AppScaffold(vm: MapViewModel = viewModel()) {
         Scaffold(
             topBar = {
                 SmallTopAppBar(
-                    title = { Text("Map Draw (Google Maps)") },
+                    title = { Text("Map Draw - SOWIT") },
                     navigationIcon = {
                         IconButton(onClick = {
                             scope.launch {
@@ -156,7 +157,7 @@ fun AppScaffold(vm: MapViewModel = viewModel()) {
     }
 }
 
-/** Google Maps Compose: draw current poly + react to saved selection. */
+/** Google Maps Compose: draw current poly + react to saved selection (re-draw & color). */
 @Composable
 fun GoogleMapComposable(
     onMapTap: (lat: Double, lng: Double) -> Unit,
@@ -166,7 +167,9 @@ fun GoogleMapComposable(
         position = CameraPosition.fromLatLngZoom(LatLng(33.5731, -7.5898), 14f)
     }
 
-    // Move camera when a saved plot is selected
+    // Keep the *selected/saved* polygon points to render them colored.
+    var selectedPolygon by remember { mutableStateOf<List<LatLng>>(emptyList()) }
+
     LaunchedEffect(Unit) {
         SelectedPlotBus.events.collect { plot ->
             val center = LatLng(plot.centroidLat, plot.centroidLng)
@@ -174,6 +177,9 @@ fun GoogleMapComposable(
                 update = CameraUpdateFactory.newLatLngZoom(center, 15f),
                 durationMs = 800
             )
+
+            selectedPolygon = GeoConverters.fromStorage(plot.vertices)
+                .map { (lat, lng) -> LatLng(lat, lng) }
         }
     }
 
@@ -187,72 +193,34 @@ fun GoogleMapComposable(
         uiSettings = uiSettings,
         onMapClick = { latLng -> onMapTap(latLng.latitude, latLng.longitude) }
     ) {
+
         if (current.isNotEmpty()) {
             val pts = current.map { LatLng(it.first, it.second) }
             if (pts.size >= 2) {
                 Polyline(points = pts, width = 6f)
             }
             if (pts.size >= 3) {
-                // ARGB: 0x33 = ~20% alpha
                 Polygon(points = pts, fillColor = Color(0x33FF9800), strokeWidth = 0f)
             }
+        }
+
+        if (selectedPolygon.size >= 3) {
+            Polygon(
+                points = selectedPolygon,
+                fillColor = Color(0x5534C759), // 0x55 alpha for a solid highlight
+                strokeColor = Color(0xFF34C759),
+                strokeWidth = 4f
+            )
         }
     }
 }
 
-/** one-line event bus for selection -> map */
+/** Event bus: saved list -> map */
 object SelectedPlotBus {
-    private val _events = MutableSharedFlow<com.sowit.mapdrawapp.data.PlotArea>(extraBufferCapacity = 1)
-    val events: SharedFlow<com.sowit.mapdrawapp.data.PlotArea> = _events.asSharedFlow()
-    fun select(plot: com.sowit.mapdrawapp.data.PlotArea) { _events.tryEmit(plot) }
+    private val _events = MutableSharedFlow<PlotArea>(extraBufferCapacity = 1)
+    val events: SharedFlow<PlotArea> = _events.asSharedFlow()
+    fun select(plot: PlotArea) { _events.tryEmit(plot) }
 }
 
 private fun Double.format(n: Int) = "%.${n}f".format(this)
 
-
-//
-//import android.os.Bundle
-//import androidx.activity.ComponentActivity
-//import androidx.activity.compose.setContent
-//import androidx.activity.enableEdgeToEdge
-//import androidx.compose.foundation.layout.fillMaxSize
-//import androidx.compose.foundation.layout.padding
-//import androidx.compose.material3.Scaffold
-//import androidx.compose.material3.Text
-//import androidx.compose.runtime.Composable
-//import androidx.compose.ui.Modifier
-//import androidx.compose.ui.tooling.preview.Preview
-//import com.sowit.mapdrawapp.ui.theme.MapDrawAppTheme
-//
-//class MainActivity : ComponentActivity() {
-//    override fun onCreate(savedInstanceState: Bundle?) {
-//        super.onCreate(savedInstanceState)
-//        enableEdgeToEdge()
-//        setContent {
-//            MapDrawAppTheme {
-//                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-//                    Greeting(
-//                        name = "Android",
-//                        modifier = Modifier.padding(innerPadding)
-//                    )
-//                }
-//            }
-//        }
-//    }
-//}
-//
-//@Composable
-//fun Greeting(name: String, modifier: Modifier = Modifier) {
-//    Text(
-//        text = "Hello $name!",
-//        modifier = modifier
-//    )
-//}
-//
-//@Preview(showBackground = true)
-//@Composable
-//fun GreetingPreview() {
-//    MapDrawAppTheme {
-//        Greeting("Android")
-//    }
-//}
