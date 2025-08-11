@@ -1,4 +1,4 @@
 <resources>
     <string name="app_name">mapDrawApp</string>
-    <string name="google_maps_key">AIzaSyDyIht3M4X1n95Pv1ZDsBEaqL88RPOQ8XM</string>
+    <string name="google_maps_key">YOUR-GOOGLE-MAPS-API-KEY</string>
 </resources>
